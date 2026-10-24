@@ -1,0 +1,11 @@
+# Local junction to shared portfolio harness
+harness/
+
+# Build artifacts & OS caches
+build/
+.gradle/
+node_modules/
+dist/
+.DS_Store
+Thumbs.db
+*.log
