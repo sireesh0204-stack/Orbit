@@ -1,8 +1,24 @@
-from typing import Optional, Dict, Any
-from fastapi import Header, HTTPException, status, Depends
+import os
 import json
 import base64
+from typing import Optional, Dict, Any
+from fastapi import Header, HTTPException, status, Depends
 from app.config import settings
+
+# Initialize Firebase Admin if credentials are present
+try:
+    import firebase_admin
+    from firebase_admin import credentials, auth
+    if not firebase_admin._apps:
+        creds_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            "firebase_credentials.json"
+        )
+        if os.path.exists(creds_path):
+            cred = credentials.Certificate(creds_path)
+            firebase_admin.initialize_app(cred)
+except Exception:
+    pass
 
 class AuthenticatedUser:
     def __init__(self, uid: str, email: str, name: Optional[str] = None):
