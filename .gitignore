@@ -16,6 +16,9 @@ backend/**/__pycache__/
 backend/.pytest_cache/
 *.pyc
 .env
+backend/firebase_credentials.json
+*credentials*.json
+google-services.json
 
 # Local junction to shared portfolio harness
 harness/
