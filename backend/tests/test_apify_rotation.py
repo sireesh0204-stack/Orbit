@@ -66,3 +66,4 @@ async def test_fetch_jobs_fallback_resilience():
     assert len(jobs) > 0
     assert any(j.company == "Stripe" for j in jobs)
     assert any(j.company == "Uber" for j in jobs)
+

@@ -58,38 +58,43 @@ async def fetch_google_doc_bytes(url_or_id: str) -> Tuple[bytes, str]:
         doc.save(buf)
         return buf.getvalue(), f"gdoc_{file_id}.docx"
 
-    # Check for Google Drive service account key
-    drive_key = os.getenv("GOOGLE_DRIVE_SERVICE_KEY")
-    if drive_key:
-        try:
-            import json
-            from google.oauth2 import service_account
-            from googleapiclient.discovery import build
-            from googleapiclient.http import MediaIoBaseDownload
+    # Authenticated fetch using Firebase / Google Cloud Service Account
+    try:
+        from google.oauth2 import service_account
+        from google.auth.transport.requests import Request
 
+        backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        cred_path = os.getenv("FIREBASE_CREDENTIALS_JSON", os.path.join(backend_dir, "firebase_credentials.json"))
+        
+        creds = None
+        drive_key = os.getenv("GOOGLE_DRIVE_SERVICE_KEY")
+        if drive_key:
+            import json
             creds = service_account.Credentials.from_service_account_info(
                 json.loads(drive_key),
-                scopes=["https://www.googleapis.com/auth/drive.readonly"]
+                scopes=["https://www.googleapis.com/auth/drive"]
             )
-            service = build("drive", "v3", credentials=creds)
+        elif os.path.exists(cred_path):
+            creds = service_account.Credentials.from_service_account_file(
+                cred_path,
+                scopes=["https://www.googleapis.com/auth/drive"]
+            )
 
-            buf = io.BytesIO()
+        if creds:
+            creds.refresh(Request())
+            headers = {"Authorization": f"Bearer {creds.token}"}
+            
             if doc_type == "google_doc":
-                request = service.files().export_media(
-                    fileId=file_id,
-                    mimeType="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                )
+                url = f"https://www.googleapis.com/drive/v3/files/{file_id}/export?mimeType=application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             else:
-                request = service.files().get_media(fileId=file_id)
+                url = f"https://www.googleapis.com/drive/v3/files/{file_id}?alt=media"
 
-            downloader = MediaIoBaseDownload(buf, request)
-            done = False
-            while not done:
-                _, done = downloader.next_chunk()
-
-            return buf.getvalue(), f"gdoc_{file_id}.docx"
-        except Exception:
-            pass
+            async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
+                resp = await client.get(url, headers=headers)
+                if resp.status_code == 200 and len(resp.content) > 100:
+                    return resp.content, f"gdoc_{file_id}.docx"
+    except Exception:
+        pass
 
     # Public export download via HTTP
     if doc_type == "google_doc":
