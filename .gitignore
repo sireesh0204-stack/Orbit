@@ -1,9 +1,26 @@
+# Android & Gradle
+.gradle/
+build/
+app/build/
+*.iml
+.idea/
+local.properties
+.cxx/
+captures/
+*.apk
+*.aab
+
+# Python / Virtualenv
+backend/.venv/
+backend/**/__pycache__/
+backend/.pytest_cache/
+*.pyc
+.env
+
 # Local junction to shared portfolio harness
 harness/
 
 # Build artifacts & OS caches
-build/
-.gradle/
 node_modules/
 dist/
 .DS_Store
