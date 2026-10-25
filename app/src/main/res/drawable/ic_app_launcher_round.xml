@@ -4,3 +4,4 @@
     <foreground android:drawable="@drawable/ic_app_launcher_foreground" />
     <monochrome android:drawable="@drawable/ic_app_launcher_foreground" />
 </adaptive-icon>
+

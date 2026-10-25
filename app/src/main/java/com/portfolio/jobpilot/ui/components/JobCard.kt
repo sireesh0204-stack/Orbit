@@ -12,9 +12,9 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -24,10 +24,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.outlined.BookmarkBorder
-import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.outlined.StarBorder
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,7 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.portfolio.jobpilot.ui.theme.CalmEmerald
 import com.portfolio.jobpilot.ui.theme.ExecutiveIndigo
-import com.portfolio.jobpilot.ui.theme.Surface000
+import com.portfolio.jobpilot.ui.theme.SatinGold
 import com.portfolio.jobpilot.ui.theme.Surface100
 import com.portfolio.jobpilot.ui.theme.Surface200
 import com.portfolio.jobpilot.ui.theme.SurfaceBorder
@@ -56,20 +58,21 @@ import com.portfolio.jobpilot.ui.theme.TextPrimary
 import com.portfolio.jobpilot.ui.theme.TextSecondary
 import com.portfolio.jobpilot.ui.theme.WarmAmber
 
-private val CardShape = RoundedCornerShape(20.dp)
-private val BentoCellShape = RoundedCornerShape(12.dp)
-private val PillShape = RoundedCornerShape(50)
+private val CompactCardShape = RoundedCornerShape(14.dp)
+private val MatchPillShape = RoundedCornerShape(50)
 
 @Immutable
 data class JobCardUiModel(
     val id: String,
     val title: String,
     val company: String,
-    val locationMode: String,
-    val compensationRange: String,
+    val locationMode: String = "",
+    val compensationRange: String? = null,
     val matchPercentage: Int,
-    val postedAgo: String,
-    val assigneeTag: String,
+    val postedAgo: String = "",
+    val assigneeTag: String = "Sireesh",
+    val description: String? = null,
+    val skillsRequired: List<String> = emptyList(),
     val whyItMatches: String? = null,
     val expiryDaysRemaining: Int = 14,
     val isSaved: Boolean = false
@@ -87,14 +90,14 @@ fun JobCard(
     val cardInteraction = remember { MutableInteractionSource() }
     val isPressed by cardInteraction.collectIsPressedAsState()
 
-    // 120Hz VRR-safe spring; read exclusively inside graphicsLayer lambda to skip measure/layout phases
+    // 120Hz spring physics (evaluated in draw/graphics phase)
     val pressScale by animateFloatAsState(
-        targetValue = if (isPressed) 0.982f else 1f,
+        targetValue = if (isPressed) 0.985f else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioNoBouncy,
             stiffness = Spring.StiffnessMediumLow
         ),
-        label = "JobCardPressScale"
+        label = "CompactJobCardScale"
     )
 
     val matchAccent = remember(job.matchPercentage) {
@@ -112,284 +115,150 @@ fun JobCard(
                 scaleX = pressScale
                 scaleY = pressScale
             }
-            .clip(CardShape)
+            .clip(CompactCardShape)
             .clickable(
                 interactionSource = cardInteraction,
                 indication = null,
                 role = Role.Button,
                 onClick = { onCardClick(job.id) }
             ),
-        shape = CardShape,
+        shape = CompactCardShape,
         color = Surface100,
         border = BorderStroke(1.dp, SurfaceBorder)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // Top Tier: Executive Header + Tabular Match Telemetry
+            // Row 1: Title (up to 2 lines) + Match % Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
-                Column(
+                Text(
+                    text = job.title,
+                    style = TextStyle(
+                        color = TextPrimary,
+                        fontSize = 15.sp,
+                        lineHeight = 20.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = (-0.2).sp
+                    ),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .weight(1f)
-                        .padding(end = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = job.title,
-                        style = TextStyle(
-                            color = TextPrimary,
-                            fontSize = 17.sp,
-                            lineHeight = 22.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = (-0.2).sp
-                        ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = "${job.company}  •  ${job.postedAgo}",
-                        style = TextStyle(
-                            color = TextSecondary,
-                            fontSize = 13.sp,
-                            lineHeight = 18.sp,
-                            fontWeight = FontWeight.Medium
-                        ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+                        .padding(end = 8.dp)
+                )
 
-                // Tabular Percentage Badge (zero horizontal jitter on value updates)
+                // Match % Badge
                 Box(
                     modifier = Modifier
-                        .background(
-                            color = matchAccent.copy(alpha = 0.12f),
-                            shape = PillShape
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = matchAccent.copy(alpha = 0.35f),
-                            shape = PillShape
-                        )
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                        .background(color = matchAccent.copy(alpha = 0.12f), shape = MatchPillShape)
+                        .border(width = 1.dp, color = matchAccent.copy(alpha = 0.35f), shape = MatchPillShape)
+                        .padding(horizontal = 8.dp, vertical = 3.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "${job.matchPercentage}% MATCH",
+                        text = "${job.matchPercentage}%",
                         style = TextStyle(
                             color = matchAccent,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.4.sp,
                             fontFeatureSettings = "tnum"
                         )
                     )
                 }
             }
 
-            // Middle Tier: Dual Bento Sub-Cells (Recessed Deep Titanium Slate)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                BentoMetricCell(
-                    label = "COMPENSATION",
-                    value = job.compensationRange,
-                    isTabular = true,
-                    modifier = Modifier.weight(1f)
-                )
-                BentoMetricCell(
-                    label = "WORK MODE",
-                    value = job.locationMode,
-                    isTabular = false,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            // Optional Rationale Block ("Why It Matches" zero-hallucination analysis)
-            if (!job.whyItMatches.isNullOrBlank()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(BentoCellShape)
-                        .background(Surface200)
-                        .border(1.dp, SurfaceBorder.copy(alpha = 0.5f), BentoCellShape)
-                        .padding(10.dp)
-                ) {
-                    Text(
-                        text = job.whyItMatches,
-                        style = TextStyle(
-                            color = TextSecondary,
-                            fontSize = 12.sp,
-                            lineHeight = 16.sp
-                        )
-                    )
+            // Row 2: Company • Location • Posted Time (Single compact line)
+            val metadataLine = remember(job.company, job.locationMode, job.postedAgo) {
+                buildString {
+                    append(job.company)
+                    if (job.locationMode.isNotBlank()) {
+                        append("  •  ")
+                        append(job.locationMode)
+                    }
+                    if (job.postedAgo.isNotBlank()) {
+                        append("  •  ")
+                        append(job.postedAgo)
+                    }
                 }
             }
+            Text(
+                text = metadataLine,
+                style = TextStyle(
+                    color = TextSecondary,
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp,
+                    fontWeight = FontWeight.Normal
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
 
-            // Bottom Tier: Dual-User Cockpit Status + 48dp Thumb-Zone Action Cluster
+            // Row 3: Salary (Shown ONLY when it exists, hidden when empty/null)
+            if (!job.compensationRange.isNullOrBlank()) {
+                Text(
+                    text = job.compensationRange,
+                    style = TextStyle(
+                        color = TextPrimary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        fontFeatureSettings = "tnum"
+                    ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            // Row 4: Single Action Row: Star & Apply
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 2.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Dual-User Cockpit Tag
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                // Star Button
+                IconButton(
+                    onClick = { onSaveToggle(job.id) },
+                    modifier = Modifier.size(32.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .background(ExecutiveIndigo, CircleShape)
-                    )
-                    Text(
-                        text = job.assigneeTag,
-                        style = TextStyle(
-                            color = TextSecondary,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 0.3.sp
-                        )
+                    Icon(
+                        imageVector = if (job.isSaved) Icons.Rounded.Star else Icons.Outlined.StarBorder,
+                        contentDescription = "Save role",
+                        tint = if (job.isSaved) SatinGold else TextMuted,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
 
-                // Ergonomic Right-Aligned 48dp Thumb Targets for 20:9 / 19.5:9 Panels
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                // Apply Button
+                Button(
+                    onClick = { onQuickDispatch(job.id) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Surface200,
+                        contentColor = TextPrimary
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 5.dp),
+                    modifier = Modifier.height(30.dp)
                 ) {
-                    // 48dp x 48dp Bookmark Target
-                    Box(
-                        modifier = Modifier
-                            .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
-                            .clip(BentoCellShape)
-                            .background(Surface000)
-                            .border(1.dp, SurfaceBorder, BentoCellShape)
-                            .clickable(
-                                role = Role.Checkbox,
-                                onClick = { onSaveToggle(job.id) }
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = if (job.isSaved) Icons.Rounded.Bookmark else Icons.Outlined.BookmarkBorder,
-                            contentDescription = if (job.isSaved) "Remove Bookmark" else "Bookmark Role",
-                            tint = if (job.isSaved) ExecutiveIndigo else TextMuted,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    // Optional 48dp Tailor Action Button
-                    if (onTailorResume != null) {
-                        Box(
-                            modifier = Modifier
-                                .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
-                                .clip(BentoCellShape)
-                                .background(Surface200)
-                                .border(1.dp, SurfaceBorder, BentoCellShape)
-                                .clickable(
-                                    role = Role.Button,
-                                    onClick = { onTailorResume(job.id) }
-                                )
-                                .padding(horizontal = 12.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Rounded.AutoAwesome,
-                                    contentDescription = "Tailor Resume",
-                                    tint = CalmEmerald,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "Tailor",
-                                    style = TextStyle(
-                                        color = CalmEmerald,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                )
-                            }
-                        }
-                    }
-
-                    // 48dp Height Primary Cockpit Dispatch Target
-                    Row(
-                        modifier = Modifier
-                            .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
-                            .clip(BentoCellShape)
-                            .background(ExecutiveIndigo)
-                            .clickable(
-                                role = Role.Button,
-                                onClick = { onQuickDispatch(job.id) }
-                            )
-                            .padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = "Apply",
-                            style = TextStyle(
-                                color = TextPrimary,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                            contentDescription = "Dispatch Role",
-                            tint = TextPrimary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
+                    Text(
+                        text = "Apply",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                        contentDescription = null,
+                        modifier = Modifier.size(13.dp),
+                        tint = TextSecondary
+                    )
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun BentoMetricCell(
-    label: String,
-    value: String,
-    isTabular: Boolean,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .background(Surface000, BentoCellShape)
-            .border(1.dp, SurfaceBorder.copy(alpha = 0.6f), BentoCellShape)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(
-            text = label,
-            style = TextStyle(
-                color = TextMuted,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 0.8.sp
-            ),
-            maxLines = 1
-        )
-        Text(
-            text = value,
-            style = TextStyle(
-                color = TextPrimary,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                fontFeatureSettings = if (isTabular) "tnum" else null
-            ),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
     }
 }
