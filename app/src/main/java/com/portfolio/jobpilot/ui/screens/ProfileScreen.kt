@@ -2,7 +2,6 @@ package com.portfolio.jobpilot.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Person
@@ -32,7 +32,7 @@ private val ProfileCardShape = RoundedCornerShape(16.dp)
 fun ProfileScreen(
     activeUserId: String,
     onSwitchUser: (String) -> Unit,
-    masterResumeFileName: String,
+    masterResumeFileName: String?,
     profile: UserProfileDto?,
     isUploading: Boolean,
     isSaving: Boolean,
@@ -42,6 +42,7 @@ fun ProfileScreen(
     onImportGoogleDocClicked: (String) -> Unit,
     onToggleRemote: (Boolean) -> Unit,
     onSaveProfileClicked: () -> Unit,
+    onResetApp: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showGoogleDocDialog by remember { mutableStateOf(false) }
@@ -125,7 +126,7 @@ fun ProfileScreen(
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = "Switch active user or update reference resume",
+                text = "Switch active user or manage reference resume",
                 style = TextStyle(
                     color = TextSecondary,
                     fontSize = 13.sp
@@ -181,6 +182,8 @@ fun ProfileScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
 
+            val hasResume = !masterResumeFileName.isNullOrBlank()
+
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = ProfileCardShape,
@@ -198,20 +201,23 @@ fun ProfileScreen(
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
-                                .background(CalmEmerald.copy(alpha = 0.15f), CircleShape),
+                                .background(
+                                    if (hasResume) CalmEmerald.copy(alpha = 0.15f) else Surface200,
+                                    CircleShape
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.Description,
+                                imageVector = if (hasResume) Icons.Filled.Description else Icons.Filled.CloudUpload,
                                 contentDescription = null,
-                                tint = CalmEmerald,
+                                tint = if (hasResume) CalmEmerald else TextSecondary,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = masterResumeFileName,
+                                text = if (hasResume) masterResumeFileName!! else "No resume uploaded yet",
                                 style = TextStyle(
                                     color = TextPrimary,
                                     fontSize = 14.sp,
@@ -219,9 +225,9 @@ fun ProfileScreen(
                                 )
                             )
                             Text(
-                                text = "Verified Original • Reference for all tailoring",
+                                text = if (hasResume) "Verified Ground Truth Reference" else "Tap below to upload your master resume",
                                 style = TextStyle(
-                                    color = CalmEmerald,
+                                    color = if (hasResume) CalmEmerald else TextMuted,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Medium
                                 )
@@ -230,7 +236,7 @@ fun ProfileScreen(
                     }
 
                     Text(
-                        text = "All resumes tailored for job descriptions take this original resume as the strict reference with zero hallucination. If you change your resume, update it here.",
+                        text = "All resumes tailored for job descriptions take this original resume as the strict reference with zero hallucination.",
                         style = TextStyle(
                             color = TextSecondary,
                             fontSize = 12.sp,
@@ -242,7 +248,7 @@ fun ProfileScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        // Replace File
+                        // Upload/Replace File
                         Button(
                             onClick = onSelectResumeClicked,
                             colors = ButtonDefaults.buttonColors(
@@ -261,7 +267,7 @@ fun ProfileScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Replace Resume",
+                                text = if (hasResume) "Replace Resume" else "Upload Resume",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -311,27 +317,27 @@ fun ProfileScreen(
             }
         }
 
-        // Section 3: Grounded Profile Details
-        if (profile != null) {
-            item {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "GROUNDED CANDIDATE DATA",
-                    style = TextStyle(
-                        color = TextSecondary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
-                    )
+        // Section 3: Grounded Candidate Data (Only if extracted)
+        item {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "GROUNDED CANDIDATE DATA",
+                style = TextStyle(
+                    color = TextSecondary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+            )
+            Spacer(modifier = Modifier.height(8.dp))
 
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = ProfileCardShape,
-                    color = Surface100,
-                    border = BorderStroke(1.dp, SurfaceBorder)
-                ) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = ProfileCardShape,
+                color = Surface100,
+                border = BorderStroke(1.dp, SurfaceBorder)
+            ) {
+                if (profile != null) {
                     Column(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -345,7 +351,7 @@ fun ProfileScreen(
                                 style = TextStyle(color = TextSecondary, fontSize = 13.sp)
                             )
                             Text(
-                                text = profile.targetRoles.joinToString(", "),
+                                text = profile.targetRoles.joinToString(", ").ifEmpty { "Not specified" },
                                 style = TextStyle(
                                     color = TextPrimary,
                                     fontSize = 13.sp,
@@ -381,7 +387,7 @@ fun ProfileScreen(
                                 style = TextStyle(color = TextSecondary, fontSize = 13.sp)
                             )
                             Text(
-                                text = profile.preferredCities.joinToString(", "),
+                                text = profile.preferredCities.joinToString(", ").ifEmpty { "Hyderabad, Remote" },
                                 style = TextStyle(
                                     color = TextPrimary,
                                     fontSize = 13.sp,
@@ -412,45 +418,90 @@ fun ProfileScreen(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Verified Technical Skills",
-                            style = TextStyle(
-                                color = TextSecondary,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold
+                        if (profile.skills.technical.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Verified Technical Skills",
+                                style = TextStyle(
+                                    color = TextSecondary,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
                             )
-                        )
 
-                        @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-                        androidx.compose.foundation.layout.FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            profile.skills.technical.forEach { skill ->
-                                Box(
-                                    modifier = Modifier
-                                        .background(Surface200, RoundedCornerShape(6.dp))
-                                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                                ) {
-                                    Text(
-                                        text = skill,
-                                        style = TextStyle(
-                                            color = TextPrimary,
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Medium
+                            @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+                            androidx.compose.foundation.layout.FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                profile.skills.technical.forEach { skill ->
+                                    Box(
+                                        modifier = Modifier
+                                            .background(Surface200, RoundedCornerShape(6.dp))
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text(
+                                            text = skill,
+                                            style = TextStyle(
+                                                color = TextPrimary,
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Medium
+                                            )
                                         )
-                                    )
+                                    }
                                 }
                             }
                         }
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No profile extracted yet. Upload your original master resume above to extract your verified background with zero hallucination.",
+                            style = TextStyle(
+                                color = TextMuted,
+                                fontSize = 13.sp,
+                                lineHeight = 18.sp
+                            )
+                        )
                     }
                 }
             }
         }
 
+        // Section 4: Clean Reset Option
         item {
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = onResetApp,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = TextSecondary
+                ),
+                border = BorderStroke(1.dp, SurfaceBorder),
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.DeleteOutline,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = TextSecondary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Reset Orbit to Initial Setup",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

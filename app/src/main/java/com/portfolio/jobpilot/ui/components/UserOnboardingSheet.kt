@@ -2,7 +2,6 @@ package com.portfolio.jobpilot.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,11 +14,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.Button
@@ -55,7 +54,8 @@ private val ProfileCardShape = RoundedCornerShape(16.dp)
 @Composable
 fun UserOnboardingScreen(
     onCompleteSetup: (userId: String) -> Unit,
-    onUploadResumeClicked: () -> Unit,
+    onUploadResumeClicked: (userId: String) -> Unit,
+    uploadedResumeName: String? = null,
     modifier: Modifier = Modifier
 ) {
     var selectedUserId by remember { mutableStateOf("sireesh") }
@@ -87,7 +87,7 @@ fun UserOnboardingScreen(
                     )
                 )
                 Text(
-                    text = "Select your profile to initialize your grounded career feed",
+                    text = "Welcome! Select who is using this device to start fresh.",
                     style = TextStyle(
                         color = TextSecondary,
                         fontSize = 14.sp
@@ -95,7 +95,7 @@ fun UserOnboardingScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             // User 1: Sireesh
             ProfileSelectionCard(
@@ -110,22 +110,23 @@ fun UserOnboardingScreen(
             ProfileSelectionCard(
                 name = "Bhargavi",
                 email = "bhargaviyerroju@outlook.com",
-                roleTitle = "Engineering & Tech Roles",
+                roleTitle = "Software Engineer / Tech",
                 isSelected = selectedUserId == "bhargavi",
                 onSelect = { selectedUserId = "bhargavi" }
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             // Master Resume Upload Callout
+            val isResumeAttached = !uploadedResumeName.isNullOrBlank()
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(ProfileCardShape)
-                    .clickable { onUploadResumeClicked() },
+                    .clickable { onUploadResumeClicked(selectedUserId) },
                 shape = ProfileCardShape,
                 color = Surface100,
-                border = BorderStroke(1.dp, SurfaceBorder)
+                border = BorderStroke(1.dp, if (isResumeAttached) CalmEmerald.copy(alpha = 0.5f) else SurfaceBorder)
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
@@ -135,20 +136,23 @@ fun UserOnboardingScreen(
                     Box(
                         modifier = Modifier
                             .size(44.dp)
-                            .background(ExecutiveIndigo.copy(alpha = 0.15f), CircleShape),
+                            .background(
+                                if (isResumeAttached) CalmEmerald.copy(alpha = 0.15f) else ExecutiveIndigo.copy(alpha = 0.15f),
+                                CircleShape
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.CloudUpload,
+                            imageVector = if (isResumeAttached) Icons.Filled.Description else Icons.Filled.CloudUpload,
                             contentDescription = null,
-                            tint = ExecutiveIndigo,
+                            tint = if (isResumeAttached) CalmEmerald else ExecutiveIndigo,
                             modifier = Modifier.size(22.dp)
                         )
                     }
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Upload Original Master Resume",
+                            text = if (isResumeAttached) uploadedResumeName!! else "Upload Original Master Resume",
                             style = TextStyle(
                                 color = TextPrimary,
                                 fontSize = 14.sp,
@@ -156,11 +160,20 @@ fun UserOnboardingScreen(
                             )
                         )
                         Text(
-                            text = "PDF or DOCX — used as sole ground truth for tailoring",
+                            text = if (isResumeAttached) "Verified reference for this profile" else "PDF or DOCX — reference for tailoring (optional now)",
                             style = TextStyle(
-                                color = TextMuted,
+                                color = if (isResumeAttached) CalmEmerald else TextMuted,
                                 fontSize = 12.sp
                             )
+                        )
+                    }
+
+                    if (isResumeAttached) {
+                        Icon(
+                            imageVector = Icons.Rounded.CheckCircle,
+                            contentDescription = null,
+                            tint = CalmEmerald,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
@@ -178,7 +191,7 @@ fun UserOnboardingScreen(
                 modifier = Modifier.fillMaxWidth().height(48.dp)
             ) {
                 Text(
-                    text = "Continue to Orbit",
+                    text = "Start Using Orbit",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
                 )

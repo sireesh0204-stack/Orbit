@@ -371,3 +371,4 @@ fun JobDetailBottomSheet(
         }
     }
 }
+
