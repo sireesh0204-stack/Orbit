@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Soft ambient depth shadow beneath the ASZSD monogram -->
+    <group
+        android:scaleX="0.18125"
+        android:scaleY="0.18125"
+        android:translateX="15.9375"
+        android:translateY="44.625">
+        <path
+            android:pathData="
+                M 90,25 
+                C 50,25 50,95 90,95 
+                L 165,95 
+                L 105,25 
+                L 240,25 
+                L 180,95 
+                L 315,95 
+                L 255,25 
+                L 330,25 
+                C 370,25 370,95 330,95"
+            android:strokeColor="#18000000"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:strokeWidth="24" />
+    </group>
+
+    <!-- ASZSD Continuous Wireframe Monogram: Rusty Copper & Antique Bronze Gradient Mix -->
+    <group
+        android:scaleX="0.18125"
+        android:scaleY="0.18125"
+        android:translateX="15.9375"
+        android:translateY="43.125">
+        <path
+            android:pathData="
+                M 90,25 
+                C 50,25 50,95 90,95 
+                L 165,95 
+                L 105,25 
+                L 240,25 
+                L 180,95 
+                L 315,95 
+                L 255,25 
+                L 330,25 
+                C 370,25 370,95 330,95"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:strokeWidth="23.2">
+            <aapt:attr name="android:strokeColor">
+                <gradient
+                    android:startX="50"
+                    android:startY="60"
+                    android:endX="370"
+                    android:endY="60"
+                    android:type="linear">
+                    <item android:color="#D96B43" android:offset="0.0" />
+                    <item android:color="#E29555" android:offset="0.30" />
+                    <item android:color="#A85A2E" android:offset="0.65" />
+                    <item android:color="#CD7F32" android:offset="1.0" />
+                </gradient>
+            </aapt:attr>
+        </path>
+    </group>
+
+</vector>
