@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo/aszsd_monogram.svg" alt="ASZSD Monogram" width="300" />
+</p>
+
 # JobPilot: High-Precision Private Career Orchestration Engine
 
 > **Architecture Target**: Private Dual-User Mobile Client & Serverless Backend  
