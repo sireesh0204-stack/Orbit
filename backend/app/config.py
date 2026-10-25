@@ -50,6 +50,13 @@ class Settings(BaseModel):
     firebase_credentials_json: str = Field(
         default_factory=lambda: os.getenv("FIREBASE_CREDENTIALS_JSON", "")
     )
+    apify_tokens: List[str] = Field(
+        default_factory=lambda: [
+            t.strip()
+            for t in os.getenv("APIFY_TOKENS", os.getenv("APIFY_TOKEN", "")).split(",")
+            if t.strip()
+        ]
+    )
 
 settings = Settings()
 
