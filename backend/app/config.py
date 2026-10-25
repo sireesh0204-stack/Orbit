@@ -2,11 +2,22 @@ import os
 from typing import List
 from pydantic import BaseModel, Field
 
+# Load local .env if present
+env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+if os.path.exists(env_path):
+    with open(env_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+
 class Settings(BaseModel):
     app_name: str = "JobPilot Backend"
     version: str = "1.0.0"
     environment: str = Field(default_factory=lambda: os.getenv("ENVIRONMENT", "development"))
     port: int = Field(default_factory=lambda: int(os.getenv("PORT", "8080")))
+    gemini_api_key: str = Field(default_factory=lambda: os.getenv("GEMINI_API_KEY", ""))
     
     # Dual-user whitelist restriction
     # Can be configured via env var ALLOWED_USER_EMAILS="email1@example.com,email2@example.com"
